@@ -4,6 +4,11 @@ Sudoku Solver by Erik Lundquist
 */
 
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <cstddef>
+#include <cstring>
+#include <cstdlib>
 
 using namespace std;
 
@@ -11,7 +16,7 @@ int Puzzle[9][9][10];
 
 //returns true if cell has a solution set
 bool is_set(int x, int y){
-  if(Puzzle[x]y[][0] != 0) return true;
+  if(Puzzle[x][y][0] != 0) return true;
   else return false;
 }
 
@@ -42,12 +47,43 @@ void print_puzzle(){
 
 //user enters puzzle into the array
 void enter_puzzle(){
+  char ans;
+  cout << "Read from txt file? (y/n)" << endl;
+  cin >> ans;
+  if(ans == 'y'){
+
+    ifstream file;
+    file.open("puzzle.txt");
+    string line;
+    int i = 0;
+    int j = 0;
+    int num;
+    while( getline(file,line) ){
+      num = atoi(line.c_str());
+      Puzzle[i][j][0] = num;
+      i++;
+      if(i > 8){
+        i = 0;
+        j++;
+      }
+      if(j > 8) break;
+    }
+    file.close();
+
+    print_puzzle();
+  }
+
   bool entering = true;
   while(entering){
     int x;
     int y;
     int val;
+    char ans;
     print_puzzle();
+    cout << "Change a value? (y/n)" << endl;
+    cin >> ans;
+    if(ans == 'n') break;
+
     cout << "Enter x coordinate (0-8): " << endl;
     cin >> x;
     cout << "Enter y coordinate (0-8): " << endl;
@@ -70,12 +106,6 @@ void enter_puzzle(){
     }
     if(safe) Puzzle[x][y][0] = val;
 
-    print_puzzle();
-
-    cout << endl << "Would you like to enter another value? (y/n): ";
-    char ans;
-    cin >> ans;
-    if(ans != 'y') entering = false;
   }
 }
 
@@ -92,20 +122,22 @@ int only_ans_check(int x, int y){
   if(possibilities == 0) return 0; //There should never be no possible answer for a cell
   else if(possibilities == 1){
     Puzzle[x][y][0] = solution; //If there is only one possibility, set the answer for the cell
-    return 1
+    return 2;
   }
   else return 1;
 }
 
 //checks every position to see if there is only one possible number it can be
 int only_ans_sweep(){
+  int change = 1;
   for(int y=0; y < 9; y++){
     for(int x=0; x < 9; x++){
       int check = only_ans_check(x,y);
       if(check == 0) return 0; //Pass that error up!
+      else if(check == 2) change = 2;
     }
   }
-  return 1;
+  return change;
 }
 
 //check a single position to see if it is the only place a number can go in its squar/horizontal/vertical
@@ -128,8 +160,9 @@ int only_pos_sweep(){
 
 //checks a single position on the board for collisions and falsifies impossible answers
 int single_cell_check(int x, int y){
+  int change = 1;
 
-  possibilities[10];
+  int possibilities[10];
   for(int i = 0; i < 10; i++){
     possibilities[i] = 1; //we set a temp variable to have all possible, then we check everywhere and update
   }
@@ -152,16 +185,16 @@ int single_cell_check(int x, int y){
   int y_square;
 
   //determine what square we are in and set starting points for x and y
-  if(x < 3) x_sqaure = 0;
+  if(x < 3) x_square = 0;
   else if(x > 5) x_square = 6;
   else x_square = 3;
-  if(y < 3) y_sqaure = 0;
+  if(y < 3) y_square = 0;
   else if(y > 5) y_square = 6;
   else y_square = 3;
 
   //now go through sqaure for the check
-  for(int i = x_square; i < (x_sqaure+3); i++){
-    for(int j = y_square; j < (y_sqaure+3); j++){
+  for(int i = x_square; i < (x_square+3); i++){
+    for(int j = y_square; j < (y_square+3); j++){
       //we only check the x,y pairs that are in the square and not in a row/column because we already checked those
       if(i != x && j != y) possibilities[ Puzzle[i][j][0] ] = 0;
     }
@@ -170,7 +203,10 @@ int single_cell_check(int x, int y){
   //now we have an array with the possible things the cell can be in locations 1-9
   //let's set the Puzzle to reflect our findings
   for(int i = 1; i < 10; i++){
-    Puzzle[x][y][i] = possibilities[i]; //put 0 or 1 in each corrisponding location
+    if(Puzzle[x][y][i] != possibilities[i]){ //if they are different
+      Puzzle[x][y][i] = possibilities[i];    //change the entry
+      change = 2;                          //mark that we did something this round
+    }
   }
 
   //we do an error check here too
@@ -180,51 +216,59 @@ int single_cell_check(int x, int y){
     if( possibilities[ Puzzle[x][y][0] ] == 0) return 0;
   }
 
-  return 1;
+  return change;
 }
 
 //does a single position check for the whole board
 int whole_puzzle_check(){
+  int change =1;
   for(int y=0; y < 9; y++){
     for(int x=0; x < 9; x++){
       int check = single_cell_check(x,y);
       if(check == 0) return 0;
+      else if(check == 2) change = 2;
     }
   }
-  return 1;
+  return change;
 }
 
 int complete(){
+  int change = 1;
   int check = whole_puzzle_check();
   if(check == 0) return 0;
+  else if(check == 2) change = 2;
 
   for(int y=0; y < 9; y++){
     for(int x=0; x < 9; x++){
-      if(!is_set(x,y)) return 1;
+      if(!is_set(x,y)) return change;
     }
   }
 
-  return 2;
+  return 3;
 }
 
 //called to manage solving of puzzle
 int solve_puzzle(){
   bool working = true;
   int check;
+  int change = 1;
   while(working){
 
       //check if the puzzle is full
       //this calls whole_puzzle check which updates possible answers for each cell while checking
-      //2 if it is full and no error
-      //1 if isnt full
+      //3 if it is full and no error
+      //2 if it isn't full but we updated something
+      //1 if isnt full and we found nothing new
       //0 if error is found
       int done = complete();
-      if(done == 2) return 1; //full and no error? WE SOLVED IT!
+      if(done == 3) return 1; //full and no error? WE SOLVED IT!
       else if(done == 0) return 0; //shit...collision
+      else if(done == 2) change = 2;
 
       //go through whole puzzle and set cells that can only be one thing
       check = only_ans_sweep();
       if(check == 0) return 0;
+      else if(check == 2) change = 2;
 
 
   }
@@ -246,13 +290,12 @@ main (){
     else{
       cout << "We couldn't solve your puzzle." <<endl;
       cout << "This was the end result, but an error occurred along the way." << endl;
-      cout
     }
     print_puzzle();
     cout << "Would you like to solve another puzzle? (y/n): ";
     char ans;
     cin >> ans;
-    if(ans != 'y') run = false;
+    if(ans == 'n') run = false;
   }
   return 0;
 }
