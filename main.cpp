@@ -7,12 +7,12 @@ Sudoku Solver by Erik Lundquist
 #include <math.h>
 using namespace std;
 
-int Puzzle[8][8][9];
+int Puzzle[9][9][10];
 
 //fills Puzzle with all true possible values and zeroes the actual values
 void init_puzzle(){
-  for(int x=0; x < 9; x++){
-    for(int y=0; y < 9; y++){
+  for(int y=0; y < 9; y++){
+    for(int x=0; x < 9; x++){
       Puzzle[x][y][0] = 0; //0 = no answer yet
       for(int z=1; z < 10; z++){
         Puzzle[x][y][z] = 1; //1 = possible
@@ -28,8 +28,17 @@ void enter_puzzle(){
 
 //prints ascii version of current puzzle
 void print_puzzle(){
-
+  cout << endl << "Current Puzzle:" << endl;
+  for(int y=0; y < 9; y++){
+    for(int x=0; x < 9; x++){
+      cout << Puzzle[x][y][0] << " ";
+      if(x==2 || x==5) cout << "| ";
+      }
+      cout << endl;
+      if(y==2||y==5) cout << "- - - | - - - | - - - " << endl;
+    }
 }
+
 
 //called to manage solving of puzzle
 int solve_puzzle(){
@@ -70,7 +79,8 @@ void only_pos_sweep(){
 main (){
   cout << "Hello! Welcome to Sudoke Solver!\n";
   init_puzzle();
-  enter_puzzle();
+  //enter_puzzle();
+  print_puzzle();
   int error = solve_puzzle();
 
   return 0;
