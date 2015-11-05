@@ -120,7 +120,7 @@ int only_ans_check(int x, int y){
     }
   }
   if(possibilities == 0) return 0; //There should never be no possible answer for a cell
-  else if(possibilities == 1){
+  else if(possibilities == 1 && Puzzle[x][y][0] != solution){
     Puzzle[x][y][0] = solution; //If there is only one possibility, set the answer for the cell
     return 2;
   }
@@ -206,6 +206,7 @@ int single_cell_check(int x, int y){
     if(Puzzle[x][y][i] != possibilities[i]){ //if they are different
       Puzzle[x][y][i] = possibilities[i];    //change the entry
       change = 2;                          //mark that we did something this round
+      cout << "Updated possibilities of " << x << "," << y << endl;
     }
   }
 
@@ -252,6 +253,7 @@ int solve_puzzle(){
   bool working = true;
   int check;
   int change = 1;
+  int count = 1;
   while(working){
 
       //check if the puzzle is full
@@ -265,12 +267,18 @@ int solve_puzzle(){
       else if(done == 0) return 0; //shit...collision
       else if(done == 2) change = 2;
 
+      cout << "Checked for complete " << count << " time(s)!" << endl;
+
       //go through whole puzzle and set cells that can only be one thing
       check = only_ans_sweep();
       if(check == 0) return 0;
       else if(check == 2) change = 2;
 
+      cout << "Checked for answeres " << count << " time(s)! Changed = " << change << endl;
 
+      if(change == 1) return 0; //we didnt change anything this round and we didn't exit with a complete puzzle
+      change = 1;
+      count ++;
   }
 
   return 1; //SOLVED!
