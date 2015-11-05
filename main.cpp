@@ -21,11 +21,6 @@ void init_puzzle(){
   }
 }
 
-//user enters puzzle into the array
-void enter_puzzle(){
-
-}
-
 //prints ascii version of current puzzle
 void print_puzzle(){
   cout << endl << "Current Puzzle:" << endl;
@@ -39,11 +34,52 @@ void print_puzzle(){
     }
 }
 
+//user enters puzzle into the array
+void enter_puzzle(){
+  bool entering = true;
+  while(entering){
+    int x;
+    int y;
+    int val;
+    print_puzzle();
+    cout << "Enter x coordinate (0-8): " << endl;
+    cin >> x;
+    cout << "Enter y coordinate (0-8): " << endl;
+    cin >> y;
+    cout << "Enter value for that position (0-9)" << endl << "Entering a 0 will erase that position" << endl;
+    cin >> val;
+    //input sanitization
+    bool safe = true;
+    if(val > 9 || val < 0){
+      cout << "Illegal value entered, input not recorded" << endl;
+      safe = false;
+    }
+    if(x < 0 || x > 8){
+      cout << "X value out of bounds, input not recorded" << endl;
+      safe = false;
+    }
+    if(y < 0 || y > 8){
+      cout << "Y value out of bounds, input not recorded" << endl;
+      safe = false;
+    }
+    if(safe) Puzzle[x][y][0] = val;
+
+    print_puzzle();
+
+    cout << endl << "Would you like to enter another value? (y/n): ";
+    char ans;
+    cin >> ans;
+    if(ans != 'y') entering = false;
+  }
+}
+
+
+
 
 //called to manage solving of puzzle
-int solve_puzzle(){
+bool solve_puzzle(){
 
-  return 0;
+  return true;
 }
 
 //checks a single position on the board for collisions and falsifies impossible answers
@@ -77,11 +113,22 @@ void only_pos_sweep(){
 }
 
 main (){
-  cout << "Hello! Welcome to Sudoke Solver!\n";
-  init_puzzle();
-  //enter_puzzle();
-  print_puzzle();
-  int error = solve_puzzle();
-
+  bool run = true;
+  while(run){
+    cout << "Hello! Welcome to Sudoke Solver!" << endl;
+    init_puzzle();
+    enter_puzzle();
+    print_puzzle();
+    cout << "Solving!" << endl;
+    bool solved = solve_puzzle();
+    if(solved){
+      print_puzzle();
+      cout << endl << "You're puzzle has been solved!" << endl;
+      cout << "Would you like to solve another puzzle? (y/n): ";
+      char ans;
+      cin >> ans;
+      if(ans != 'y') run = false;
+    }
+  }
   return 0;
 }
