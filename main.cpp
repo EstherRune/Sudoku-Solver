@@ -43,15 +43,11 @@ void print_puzzle(){
       cout << endl;
       if(y==2||y==5) cout << "- - - | - - - | - - - " << endl;
     }
+    cout << endl;
 }
 
 //user enters puzzle into the array
 void enter_puzzle(){
-  char ans;
-  cout << "Read from txt file? (y/n)" << endl;
-  cin >> ans;
-  if(ans == 'y'){
-
     ifstream file;
     file.open("puzzle.txt");
     string line;
@@ -69,44 +65,7 @@ void enter_puzzle(){
       if(j > 8) break;
     }
     file.close();
-
     print_puzzle();
-  }
-
-  bool entering = true;
-  while(entering){
-    int x;
-    int y;
-    int val;
-    char ans;
-    print_puzzle();
-    cout << "Change a value? (y/n)" << endl;
-    cin >> ans;
-    if(ans == 'n') break;
-
-    cout << "Enter x coordinate (0-8): " << endl;
-    cin >> x;
-    cout << "Enter y coordinate (0-8): " << endl;
-    cin >> y;
-    cout << "Enter value for that position (0-9)" << endl << "Entering a 0 will erase that position" << endl;
-    cin >> val;
-    //input sanitization
-    bool safe = true;
-    if(val > 9 || val < 0){
-      cout << "Illegal value entered, input not recorded" << endl;
-      safe = false;
-    }
-    if(x < 0 || x > 8){
-      cout << "X value out of bounds, input not recorded" << endl;
-      safe = false;
-    }
-    if(y < 0 || y > 8){
-      cout << "Y value out of bounds, input not recorded" << endl;
-      safe = false;
-    }
-    if(safe) Puzzle[x][y][0] = val;
-
-  }
 }
 
 //checks a single position to see if there is only one number it can be
@@ -122,6 +81,7 @@ int only_ans_check(int x, int y){
   if(possibilities == 0) return 0; //There should never be no possible answer for a cell
   else if(possibilities == 1 && Puzzle[x][y][0] != solution){
     Puzzle[x][y][0] = solution; //If there is only one possibility, set the answer for the cell
+    cout << "Found an answer: " << x << "," << y << " = " << solution << endl;
     return 2;
   }
   else return 1;
@@ -140,22 +100,87 @@ int only_ans_sweep(){
   return change;
 }
 
-//check a single position to see if it is the only place a number can go in its squar/horizontal/vertical
-int only_pos_check(int x, int y){
-
-
-  return 1;
-}
-
 //checks every position to see if it is the only place a number in a sqaure/horizontal/vertical can go
 int only_pos_sweep(){
-  for(int y=0; y < 9; y++){
-    for(int x=0; x < 9; x++){
-      int check = only_pos_check(x,y);
-      if(check == 0) return 0;
+  int change = 1;
+
+  int tracker;
+  int saver;
+  bool set = false;
+
+  //check each num for row, column, and square uniqueness in possibilities
+
+  //number to check for iterator
+  for(int num = 1; num < 10; num++){
+
+    //look at rows
+    for(int y=0; y < 9; y++){
+      for(int x=0; x < 9; x++){
+        if(Puzzle[x][y][num] == 1 && !is_set(x,y)){
+          tracker++;
+          saver = x;
+        }
+        if(Puzzle[x][y][0] == num){
+          set = true;
+        }
+      }
+      if(tracker == 1 && !set){
+        Puzzle[saver][y][0] == num;
+        cout << "Found an answer: " << saver << "," << y << " = " << num << endl;
+        //print_puzzle();
+        change = 2;
+      }
+      else if(tracker == 0 && !set) {
+        cout << "Failed pos test " << saver << "," << y << "=" << num << endl;
+        return 0;
+      }
+      tracker = 0;
+      set = false;
     }
+/*
+    //look at columns
+    for(int x=0; x < 9; x++){
+      for(int y=0; y < 9; y++){
+        if(Puzzle[x][y][num] == 1 && !is_set(x,y)){
+          tracker++;
+          saver = y;
+        }
+      }
+      if(tracker == 1){
+        Puzzle[x][saver][0] == num;
+        cout << "Found an answer: " << x << "," << saver << " = " << num << endl;
+        change = 2;
+      }
+      else if(tracker == 0) return 0;
+      tracker = 0;
+    }
+
+
+    int savex;
+    int savey;
+    //look at squares
+    for(int base_x = 0; base_x < 9; base_x += 3){
+      for(int base_y = 0; base_y <9; base_y += 3){
+        for(int x = 0; x < 3; x++){
+          for(int y = 0; y < 3; y++){
+            if(Puzzle[base_x+x][base_y+y][num] == 1 && !is_set(x,y)) tracker++;
+            savex = x;
+            savey = y;
+          }
+        }
+        if(tracker == 1){
+          Puzzle[savex][savey][0] == num;
+          cout << "Found an answer: " << savex << "," << savey << " = " << num << endl;
+          change = 2;
+        }
+        else if(tracker == 0) return 0;
+        tracker = 0;
+      }
+    }
+    */
   }
-  return 1;
+
+  return change;
 }
 
 //checks a single position on the board for collisions and falsifies impossible answers
@@ -188,6 +213,7 @@ int single_cell_check(int x, int y){
   if(x < 3) x_square = 0;
   else if(x > 5) x_square = 6;
   else x_square = 3;
+
   if(y < 3) y_square = 0;
   else if(y > 5) y_square = 6;
   else y_square = 3;
@@ -196,7 +222,7 @@ int single_cell_check(int x, int y){
   for(int i = x_square; i < (x_square+3); i++){
     for(int j = y_square; j < (y_square+3); j++){
       //we only check the x,y pairs that are in the square and not in a row/column because we already checked those
-      if(i != x && j != y) possibilities[ Puzzle[i][j][0] ] = 0;
+      if(i != x || j != y) possibilities[ Puzzle[i][j][0] ] = 0;
     }
   }
 
@@ -206,7 +232,7 @@ int single_cell_check(int x, int y){
     if(Puzzle[x][y][i] != possibilities[i]){ //if they are different
       Puzzle[x][y][i] = possibilities[i];    //change the entry
       change = 2;                          //mark that we did something this round
-      cout << "Updated possibilities of " << x << "," << y << endl;
+      //cout << "Updated possibilities of " << x << "," << y << endl;
     }
   }
 
@@ -253,6 +279,7 @@ int solve_puzzle(){
   bool working = true;
   int check;
   int change = 1;
+  int change_fails = 0;
   int count = 1;
   while(working){
 
@@ -264,46 +291,67 @@ int solve_puzzle(){
       //0 if error is found
       int done = complete();
       if(done == 3) return 1; //full and no error? WE SOLVED IT!
-      else if(done == 0) return 0; //shit...collision
+      else if(done == 0){
+        cout << "failed complete check" << endl;
+        return 0;
+      } //shit...collision
       else if(done == 2) change = 2;
-
-      cout << "Checked for complete " << count << " time(s)!" << endl;
+      cout << "Checked for complete " << count << " time(s)! Change = " << change << endl;
 
       //go through whole puzzle and set cells that can only be one thing
       check = only_ans_sweep();
-      if(check == 0) return 0;
+      if(check == 0){
+        cout << "Failed ans_sweep" << endl;
+        return 0;
+      }
       else if(check == 2) change = 2;
+      cout << "Checked for sole answeres in cells " << count << " time(s)! Change = " << change << endl;
 
-      cout << "Checked for answeres " << count << " time(s)! Changed = " << change << endl;
+      done = complete();
+      if(done == 3) return 1; //full and no error? WE SOLVED IT!
+      else if(done == 0){
+        cout << "failed complete check" << endl;
+        return 0;
+      } //shit...collision
+      else if(done == 2) change = 2;
+      cout << "Checked for complete " << count << " time(s)! Change = " << change << endl;
 
-      if(change == 1) return 0; //we didnt change anything this round and we didn't exit with a complete puzzle
+      //goes through the puzzle and checks each row, column, and square for a number that can only go in one place
+      check = only_pos_sweep();
+      if(check == 0){
+        cout << "Failed pos_sweep" << endl;
+        return 0;
+      }
+      else if(check == 2) change = 2;
+      cout << "Checked for only possible positions in groups " << count << " time(s)! Change = " << change << endl;
+
+      if(change == 1) change_fails++; //we didnt change anything this round and we didn't exit with a complete puzzle
       change = 1;
       count ++;
+      if(change_fails == 3){
+        cout << change_fails << " times failed to change anything" << endl;
+        return 0;
+      }
   }
 
   return 1; //SOLVED!
 }
 
 main (){
-  bool run = true;
-  while(run){
-    cout << "Hello! Welcome to Sudoke Solver!" << endl;
-    init_puzzle();
-    enter_puzzle();
-    cout << "Solving!" << endl;
-    int check = solve_puzzle();
-    if(check == 1){
-      cout << endl << "Your puzzle has been solved!" << endl;
-    }
-    else{
-      cout << "We couldn't solve your puzzle." <<endl;
-      cout << "This was the end result, but an error occurred along the way." << endl;
-    }
-    print_puzzle();
-    cout << "Would you like to solve another puzzle? (y/n): ";
-    char ans;
-    cin >> ans;
-    if(ans == 'n') run = false;
+
+  cout << "Hello! Welcome to Sudoku Solver!" << endl;
+  init_puzzle();
+  enter_puzzle();
+  cout << "Solving!" << endl;
+  int check = solve_puzzle();
+  if(check == 1){
+    cout << endl << "Your puzzle has been solved!" << endl;
   }
+  else{
+    cout << "We couldn't solve your puzzle. " <<endl;
+
+  }
+  print_puzzle();
+
   return 0;
 }
